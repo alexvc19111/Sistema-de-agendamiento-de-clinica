@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\estado_turno;
 
 class estado_turnoController extends Controller
 {

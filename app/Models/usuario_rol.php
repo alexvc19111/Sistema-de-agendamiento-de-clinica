@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class usuario_rol extends Model
 {
+    public $incrementing = false;
+    protected $primaryKey = null;
     //
     protected $fillable=['usuario_id','rol_id'];
 
