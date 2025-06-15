@@ -16,12 +16,15 @@ use App\Http\Controllers\atencionController;
 use App\Http\Controllers\AuthController;
 
 
-
+Route::view('/login', 'login')->name('login');
 //Autenticación
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::view('/home', 'home')->name('home');
+
+
 
 });
 

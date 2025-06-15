@@ -19,6 +19,15 @@ class usuarioController extends Controller
     // Método para crear un nuevo usuario
     public function store(Request $request)
     {
+        $user = $request->user(); // Usuario autenticado
+
+        // Verificar si el usuario autenticado es el administrador
+        //Solo el usuario con username 'Administrador' puede crear nuevos usuarios
+        if ($user->username !== 'Administrador') {
+            return response()->json(['mensaje' => 'No autorizado para crear usuarios.'], 403);
+        }
+
+
         $request->validate([
             'username' => 'required|string|max:50|unique:usuarios',
             'password' => 'required|string|min:6',
