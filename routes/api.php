@@ -14,16 +14,36 @@ use App\Http\Controllers\turnoController;
 use App\Http\Controllers\derivacionController;
 use App\Http\Controllers\atencionController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AgendaMedicaController;
 
 
-Route::view('/login', 'login')->name('login');
+
 //Autenticación
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::view('/home', 'home')->name('home');
 
+    // Rutas de agenda médica protegidas que requieren autenticación
+    Route::middleware('role:medico')->group(function () {
+        Route::post('/agenda', [AgendaMedicaController::class, 'store']);
+    });
+
+    Route::middleware('role:medico,Administrador,recepcionista')->group(function () {
+        //Obtener agenda de medico por ID
+        Route::get('/agenda/medico/{medico_id}', [AgendaMedicaController::class, 'porMedico']);
+        //Obtener turnos disponibles para un médico
+        Route::get('/agenda/medico/{medico_id}/disponibilidad', [TurnoController::class, 'disponibilidad']);
+        //Generar turnos disponibles para un médico en un rango de fechas verificando la agenda
+        Route::post('/agenda/medico/{medico_id}/generarturnos', [TurnoController::class, 'generarTurnos']);
+        //Usar turno disponible, a pendiente de atencion
+         
+
+    });
+
+    Route::apiResource('medicos', MedicoController::class);
+    Route::apiResource('turnos', TurnoController::class);
+    //
 
 
 });

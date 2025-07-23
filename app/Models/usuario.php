@@ -31,9 +31,14 @@ class usuario extends Authenticatable
     public function roles(){
         return $this->belongsToMany(
             rol::class,      // Modelo relacionado
-            'usuario_rols',   // Tabla pivote, ajusta si es 'usuario_rols'
+            'usuario_rols',   // Tabla pivote
             'usuario_id',    // FK usuario en pivote
             'rol_id'         // FK rol en pivote
         );
     }
+    
+    public function hasRole($roleName)
+{
+    return $this->roles()->where('nombre_rol', $roleName)->exists();
+}
 }

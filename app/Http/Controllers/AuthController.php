@@ -1,56 +1,43 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Models\usuario;
+use App\Http\Requests\LoginRequest;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    protected $authService;
+
+    public function __construct(AuthService $authService)
     {
-        $request->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
-        ]);
+        $this->authService = $authService;
+    }
 
-        $usuario = usuario::where('username', $request->username)->first();
+    public function login(LoginRequest $request)
+    {
+        $credentials = $request->validated();
 
-        if (!$usuario || !Hash::check($request->password, $usuario->password)) {
+        $datos = $this->authService->login($credentials['username'], $credentials['password']);
+
+        if (!$datos) {
             return response()->json(['mensaje' => 'Credenciales inválidas'], 401);
         }
 
-        $token = $usuario->createToken('token_personal')->plainTextToken;
-
-        return response()->json([
-            'id' => $usuario->id,
-            'token' => $token,
-            'username' => $usuario->username,
-            'persona' => $usuario->persona,
-            'roles' => $usuario->roles->pluck('nombre_rol')->toArray(), // Devuelve nombres de los roles
-        ]);
+        return response()->json($datos);
     }
+
     public function logout(Request $request)
     {
-        // Revocar el token actual que se usa en esta petición
-        $request->user()->tokens()->delete();
-
+        $this->authService->logout($request->user());
 
         return response()->json(['mensaje' => 'Sesión cerrada correctamente.']);
     }
 
-     public function me(Request $request)
+    public function me(Request $request)
     {
-        $user = $request->user()->load('persona', 'roles');
+        $data = $this->authService->getUserInfo($request->user());
 
-        return response()->json([
-            'id' => $user->id,
-            'username' => $user->username,
-            'persona' => $user->persona,
-            'roles' => $user->roles->pluck('nombre_rol')->toArray(), // Devuelve nombres de los roles
-        ]);
+        return response()->json($data);
     }
 }
-

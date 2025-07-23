@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             $middleware->alias([
         'auth:sanctum' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         'log.accesos' => \App\Http\Middleware\LogAccesosUsuario::class,
+        'role' => \App\Http\Middleware\RoleMiddleware::class,
     ]);
 
 })

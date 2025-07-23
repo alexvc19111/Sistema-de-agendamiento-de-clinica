@@ -7,115 +7,103 @@ use App\Models\usuario;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\HasApiTokens;
-
+use App\Http\Requests\StoreUsuarioRequest;
+use App\Http\Requests\UpdateUsuarioRequest;
+use App\Services\UsuarioService;
 
 
 class usuarioController extends Controller
 {
     use HasApiTokens;
 
-    
+    protected $usuarioService;
+
+    public function __construct(UsuarioService $usuarioService)
+    {
+        $this->usuarioService = $usuarioService;
+    }
+
 
     // Método para crear un nuevo usuario
-    public function store(Request $request)
+    // Este método recibe los datos validados del request y los pasa al servicio para crear el usuario
+    public function store(StoreUsuarioRequest $request)
     {
-        $user = $request->user(); // Usuario autenticado
 
-        // Verificar si el usuario autenticado es el administrador
-        //Solo el usuario con username 'Administrador' puede crear nuevos usuarios
-        if ($user->username !== 'Administrador') {
-            return response()->json(['mensaje' => 'No autorizado para crear usuarios.'], 403);
-        }
+        $datosValidados = $request->validated();
 
+         $usuario = $this->usuarioService->crearUsuario($datosValidados);
 
-        $request->validate([
-            'username' => 'required|string|max:50|unique:usuarios',
-            'password' => 'required|string|min:6',
-            'persona_id' => 'required|exists:personas,id'
-        ]);
-
-        // Encriptar contraseña antes de guardar
-        $data = $request->only(['username', 'password', 'persona_id']);
-        $data['password'] = bcrypt($data['password']);
-
-        $usuario = usuario::create($data);
         return response()->json([
-    'mensaje' => 'Usuario creado correctamente.',
-    'usuario' => $usuario->only('id', 'username', 'persona_id') // no envíes password ni datos sensibles
-], 201);
+            'mensaje' => 'Usuario creado correctamente.',
+            'usuario' => $usuario->only('id', 'username', 'persona_id')
+        ], 201);
+
+
     }
 
     // Método para mostrar un usuario por ID
     public function show($id)
     {
-        $usuario = usuario::findOrFail($id);
+        $usuario = $this->usuarioService->obtenerUsuario($id);
 
         if (!$usuario) {
             return response()->json(['mensaje' => 'Usuario no encontrado.'], 404);
         }
 
-        return $usuario;
+        return response()->json($usuario);
     }
 
     // Método para actualizar un usuario
-    public function update(Request $request, $id)
+    public function update(UpdateUsuarioRequest $request, $id)
     {
-        $usuario = usuario::find($id);
+        $usuario = $this->usuarioService->actualizarUsuario($id, $request->validated());
 
         if (!$usuario) {
             return response()->json(['mensaje' => 'Usuario no encontrado.'], 404);
         }
 
-        $request->validate([
-            'username' => 'sometimes|required|string|max:50|unique:usuarios,username,' . $id,
-            'password' => 'sometimes|required|string|min:6',
-            'persona_id' => 'sometimes|required|exists:personas,id'
-        ]);
-
-        $data = $request->all();
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        }
-
-        $usuario->update($data);
         return response()->json([
             'mensaje' => 'Usuario actualizado correctamente.',
             'usuario' => $usuario
         ]);
-        }
+    }
+
 
     // Método para eliminar un usuario
-    public function destroy($id)    
+    public function destroy($id)
     {
-        $usuario = usuario::find($id);
+        $usuarioAutenticado = auth()->user();
+        
+        if ($usuarioAutenticado->username !== 'Administrador') {
+        return response()->json(['mensaje' => 'No autorizado para eliminar usuarios.'], 403);
+    }
+
+        $usuario = $this->usuarioService->eliminarUsuario($id);
 
         if (!$usuario) {
             return response()->json(['mensaje' => 'Usuario no encontrado.'], 404);
         }
 
-        $usuario->delete();
-
-        return response()->json(['mensaje' => 'Usuario eliminado correctamente.'],200);
+        return response()->json(['mensaje' => 'Usuario eliminado correctamente.'], 200);
     }
+
     public function index()
-{
-    // Cargar usuario con persona y roles (relaciones)
-    $usuarios = usuario::with(['persona', 'roles'])->get();
+    {
+        $usuarios = $this->usuarioService->listarUsuarios();
 
-    // Mapear para devolver solo los campos que quieres
-    $resultado = $usuarios->map(function ($usuario) {
-        return [
-            'nombres' => $usuario->persona->nombres ?? null,
-            'apellidos' => $usuario->persona->apellidos ?? null,
-            'dni' => $usuario->persona->dni ?? null,
-            'fecha_nacimiento' => $usuario->persona->fecha_nacimiento ?? null,
-            'direccion' => $usuario->persona->direccion ?? null,
-            'telefono' => $usuario->persona->telefono ?? null,
-            'username' => $usuario->username,
-            'roles' => $usuario->roles->pluck('nombre_rol')->toArray()  // array de roles
-        ];
-    });
+        $resultado = $usuarios->map(function ($usuario) {
+            return [
+                'nombres' => $usuario->persona->nombres ?? null,
+                'apellidos' => $usuario->persona->apellidos ?? null,
+                'dni' => $usuario->persona->dni ?? null,
+                'fecha_nacimiento' => $usuario->persona->fecha_nacimiento ?? null,
+                'direccion' => $usuario->persona->direccion ?? null,
+                'telefono' => $usuario->persona->telefono ?? null,
+                'username' => $usuario->username,
+                'roles' => $usuario->roles->pluck('nombre_rol')->toArray()
+            ];
+        });
 
-    return response()->json($resultado);
-}
+        return response()->json($resultado);
+    }
 }
