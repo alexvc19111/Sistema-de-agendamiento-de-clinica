@@ -3,7 +3,7 @@ namespace App\Services;
 
 use App\Repositories\Interfaces\TurnoRepositoryInterface;
 use App\Repositories\Interfaces\AgendaMedicaRepositoryInterface;
-use App\Models\Turno;
+use App\Models\turno;
 
 
 

@@ -10,6 +10,8 @@ use App\Http\Requests\CambiarEstadoRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\Turno;
+use Illuminate\Support\Facades\Log;
+
 
 class turnoController extends Controller
 {
@@ -51,15 +53,16 @@ class turnoController extends Controller
 
     public function generarTurnos(GenerarTurnosRequest $request, $medico_id)
 {
-    $request->validate([
-        'fecha_desde' => 'required|date',
-        'fecha_hasta' => 'required|date|after_or_equal:today',
-    ]);
+    Log::info("Generando turnos para médico ID: $medico_id");
 
     $fecha_desde = $request->fecha_desde;
     $fecha_hasta = $request->fecha_hasta;
 
+    Log::info("Fechas: $fecha_desde hasta $fecha_hasta");
+
     $turnosGenerados = $this->turnoService->generarTurnosDisponibles($medico_id, $fecha_desde, $fecha_hasta);
+
+    Log::info("Se generaron " . count($turnosGenerados) . " turnos");
 
     return response()->json([
         'mensaje' => 'Turnos disponibles generados',
