@@ -35,27 +35,27 @@ Route::middleware('auth:sanctum')->group(function () {
        
         Route::put('/agenda/{id}', [AgendaMedicaController::class, 'update']);
         //Obtener turnos disponibles para un médico
-        Route::get('/turnos/disponibles/{medico_id}', [TurnoController::class, 'turnosDisponiblesPorMedico']);
+        Route::get('/turnos/disponibles/{medico_id}', [turnoController::class, 'turnosDisponiblesPorMedico']);
         //Generar turnos disponibles para un médico en un rango de fechas verificando la agenda
-        Route::post('/turnos/generarturnos/{medico_id}', [TurnoController::class, 'generarTurnos']);
+        Route::post('/turnos/generarturnos/{medico_id}', [turnoController::class, 'generarTurnos']);
         //Asignar un turno a un paciente
 
 
         //Obtener turnos reservados desde hoy por médico
-        Route::get('/turnos/reservados/{medicoId}', [TurnoController::class, 'turnosReservadosDesdeHoyPorMedico']);
+        Route::get('/turnos/reservados/{medicoId}', [turnoController::class, 'turnosReservadosDesdeHoyPorMedico']);
 
-        Route::get('turnos/historial/{medicoId}', [TurnoController::class, 'historialPorMedico']);
+        Route::get('turnos/historial/{medicoId}', [turnoController::class, 'historialPorMedico']);
 
 
     });
-    Route::get('/turnos/disponibles', [TurnoController::class, 'turnosDisponiblesDesdeHoy']);
-        Route::put('/turnos/{id}/agendar', [TurnoController::class, 'agendarTurno']);
+    Route::get('/turnos/disponibles', [turnoController::class, 'turnosDisponiblesDesdeHoy']);
+        Route::put('/turnos/{id}/agendar', [turnoController::class, 'agendarTurno']);
         //Cambiar estado de un turno
-        Route::put('/turnos/{id}/estado', [TurnoController::class, 'cambiarEstado']);
-    Route::get('/atenciones/turno/{turnoId}', [AtencionController::class, 'porTurno']);
+        Route::put('/turnos/{id}/estado', [turnoController::class, 'cambiarEstado']);
+    Route::get('/atenciones/turno/{turnoId}', [atencionController::class, 'porTurno']);
     Route::apiResource('medicos', MedicoController::class);
-    Route::get('/turnos/{medicoID}',[TurnoController::class,'show']);
-    Route::apiResource('turnos', TurnoController::class);
+    Route::get('/turnos/{medicoID}',[turnoController::class,'show']);
+    Route::apiResource('turnos', turnoController::class);
     //
 
 

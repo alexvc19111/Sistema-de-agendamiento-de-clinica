@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Atencion extends Model
+class atencion extends Model
 {
     protected $fillable = [
         'turno_id',

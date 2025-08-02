@@ -2,7 +2,7 @@
 
 namespace App\Repositories;
 
-use App\Models\Atencion;
+use App\Models\atencion;
 
 class AtencionRepository
 {

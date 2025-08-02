@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\Turno;
 
-class TurnoController extends Controller
+class turnoController extends Controller
 {
     protected $turnoService;
 

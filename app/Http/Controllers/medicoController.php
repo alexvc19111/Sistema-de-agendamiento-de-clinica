@@ -6,7 +6,7 @@ use App\Http\Requests\MedicoRequest;
 use App\Services\MedicoService;
 use Illuminate\Http\Request;
 
-class MedicoController extends Controller
+class medicoController extends Controller
 {
     protected $medicoService;
 

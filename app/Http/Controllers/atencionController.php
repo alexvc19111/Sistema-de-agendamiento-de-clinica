@@ -6,7 +6,7 @@ use App\Http\Requests\AtencionRequest;
 use App\Services\AtencionService;
 use Illuminate\Http\Request;
 
-class AtencionController extends Controller
+class atencionController extends Controller
 {
     protected $service;
 
