@@ -2,23 +2,23 @@
 
 namespace App\Services;
 
-use App\Repositories\MedicoRepository;
+use App\Repositories\AtencionRepository;
 
-class MedicoService
+class AtencionService
 {
     protected $repository;
 
-    public function __construct(MedicoRepository $repository)
+    public function __construct(AtencionRepository $repository)
     {
         $this->repository = $repository;
     }
 
-    public function getAll()
+    public function listAll()
     {
-        return $this->repository->getAll();
+        return $this->repository->all();
     }
 
-    public function find($id)
+    public function getById($id)
     {
         return $this->repository->find($id);
     }
@@ -37,9 +37,4 @@ class MedicoService
     {
         return $this->repository->delete($id);
     }
-
-    public function findByUsuarioId($usuario_id)
-{
-    return $this->repository->findByUsuarioId($usuario_id);
-}
 }

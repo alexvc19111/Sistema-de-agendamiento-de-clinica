@@ -27,14 +27,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UsuarioRepositoryInterface::class, UsuarioRepository::class);
         $this->app->bind(AuthRepositoryInterface::class, AuthRepository::class);
         $this->app->bind(AgendaMedicaRepositoryInterface::class, AgendaMedicaRepository::class);
-        $this->app->bind(TurnoRepository::class, TurnoRepository::class);
+        $this->app->bind(TurnoRepositoryInterface::class, TurnoRepository::class);
         $this->app->bind(MedicoRepository::class, MedicoRepository::class);
-        
+        $this->app->bind(AtencionRepository::class, AtencionRepository::class);
+
         // Servicios
         $this->app->bind(TurnoService::class, function ($app) {
             return new TurnoService(
                 $app->make(TurnoRepository::class),
-                $app->make(AgendaMedicaService::class),
                 $app->make(AgendaMedicaRepository::class)
             );
         });

@@ -93,6 +93,7 @@ class usuarioController extends Controller
 
         $resultado = $usuarios->map(function ($usuario) {
             return [
+                'id' => $usuario->id,
                 'nombres' => $usuario->persona->nombres ?? null,
                 'apellidos' => $usuario->persona->apellidos ?? null,
                 'dni' => $usuario->persona->dni ?? null,

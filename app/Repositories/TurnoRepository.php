@@ -1,9 +1,12 @@
 <?php
+
 namespace App\Repositories;
 
 use App\Models\turno;
+use App\Repositories\Interfaces\TurnoRepositoryInterface;
+use Illuminate\Support\Collection;
 
-class TurnoRepository
+class TurnoRepository implements TurnoRepositoryInterface
 {
     protected $model;
 
@@ -12,14 +15,14 @@ class TurnoRepository
         $this->model = $turno;
     }
 
-    public function all()
+    public function all() : Collection
     {
-        return $this->model->all();
+        return $this->model->with(['medico', 'paciente', 'estado_turno','agenda_medica'])->get();
     }
 
-    public function find($id)
+    public function findById($id)
     {
-        return $this->model->findOrFail($id);
+        return $this->model->with(['medico', 'paciente', 'estado_turno','agenda_medica'])->findOrFail($id);
     }
 
     public function create(array $data)
@@ -40,20 +43,38 @@ class TurnoRepository
         return $turno->delete();
     }
 
-    public function existeTurno($medico_id, $fecha, $hora)
+    public function obtenerTurnosPorEstadoYFecha($medico_id, $estado_turno_id, $fecha_desde, $fecha_hasta)
 {
-    return $this->model->where('medico_id', $medico_id)
-        ->where('fecha', $fecha)
-        ->where('hora', $hora)
-        ->exists();
+    return turno::where('medico_id', $medico_id)
+        ->where('estado_turno_id', $estado_turno_id)
+        ->whereBetween('fecha', [$fecha_desde, $fecha_hasta])
+        ->orderBy('fecha', 'asc')
+        ->orderBy('hora', 'asc')
+        ->get();
 }
-
-
-    public function getTurnosPorMedicoYRangoFecha($medico_id, $fecha_inicio, $fecha_fin)
+public function existeTurno($medico_id, $fecha, $hora)
     {
         return $this->model
             ->where('medico_id', $medico_id)
-            ->whereBetween('fecha', [$fecha_inicio, $fecha_fin])
-            ->get();
+            ->where('fecha', $fecha)
+            ->where('hora', $hora)
+            ->exists();
     }
+
+ public function save(Turno $turno)
+    {
+        $turno->save();
+        return $turno;
+    }
+
+    public function getTurnosReservadosDesdeFecha($medicoId, $fecha)
+{
+    return $this->model
+        ->where('medico_id', $medicoId)
+        ->where('estado_turno_id', 14) // Estado reservado
+        ->where('fecha', '>=', $fecha)
+        ->with(['paciente', 'estado_turno', 'agenda_medica'])
+        ->orderBy('fecha')
+        ->get();
+}
 }

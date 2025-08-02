@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AgendaMedicaRequest;
 use App\Services\AgendaMedicaService;
+use Illuminate\Http\JsonResponse;
 
 class AgendaMedicaController extends Controller
 {

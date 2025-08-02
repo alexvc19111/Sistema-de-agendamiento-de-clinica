@@ -4,12 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class atencion extends Model
+class Atencion extends Model
 {
-    //
-    protected $fillable = ['turno_id', 'diagnostico', 'tratamiento', 'observaciones'];
+    protected $fillable = [
+        'turno_id',
+        'presion',
+        'temperatura',
+        'frecuencia_cardiaca',
+        'frecuencia_respiratoria',
+        'peso',
+        'talla',
+        'diagnostico',
+        'observaciones',
+    ];
 
-    public function turno() {
-        return $this->belongsTo(turno::class);
+    public function turno()
+    {
+        return $this->belongsTo(Turno::class);
     }
 }

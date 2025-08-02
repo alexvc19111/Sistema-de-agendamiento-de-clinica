@@ -7,14 +7,14 @@ class GenerarTurnosRequest extends FormRequest
 {
     public function authorize()
     {
-        return true; // puedes validar roles aquí también
+        return true;
     }
 
     public function rules()
     {
         return [
-            'fecha_desde' => 'required|date|before_or_equal:fecha_desde',
-            'fecha_hasta' => 'required|date|after_or_equal:fecha_hasta',
+            'fecha_desde' => 'required|date',
+            'fecha_hasta' => 'required|date|after_or_equal:fecha_desde',
         ];
     }
 }

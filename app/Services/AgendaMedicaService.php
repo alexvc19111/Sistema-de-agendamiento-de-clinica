@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Models\agenda_medica;
 use App\Repositories\Interfaces\AgendaMedicaRepositoryInterface;
 
 class AgendaMedicaService

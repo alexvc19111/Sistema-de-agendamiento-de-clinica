@@ -1,146 +1,73 @@
 <?php
 namespace App\Services;
 
-use App\Repositories\TurnoRepository;
-use App\Services\AgendaMedicaService; // para generación de turnos según agenda
-use App\Repositories\AgendaMedicaRepository; // para obtener agenda médica
+use App\Repositories\Interfaces\TurnoRepositoryInterface;
+use App\Repositories\Interfaces\AgendaMedicaRepositoryInterface;
+use App\Models\Turno;
+
+
 
 class TurnoService
 {
-    protected $turnoRepo;
-    protected $agendaMedicaService;
-    protected $agendaMedicaRepo;
+    protected $turnoRepository;
+    protected $agendaMedicaRepository;
 
-    public function __construct(TurnoRepository $turnoRepo, AgendaMedicaService $agendaMedicaService, AgendaMedicaRepository $agendaMedicaRepo)
+    public function __construct(TurnoRepositoryInterface $turnoRepository, AgendaMedicaRepositoryInterface $agendaMedicaRepository)
     {
-        $this->turnoRepo = $turnoRepo;
-        $this->agendaMedicaService = $agendaMedicaService;
-        $this->agendaMedicaRepo = $agendaMedicaRepo;
+        $this->turnoRepository = $turnoRepository;
+        $this->agendaMedicaRepository = $agendaMedicaRepository;
     }
 
     public function getAll()
     {
-        return $this->turnoRepo->all();
+        return $this->turnoRepository->all();
     }
 
     public function getById($id)
     {
-        return $this->turnoRepo->find($id);
+        return $this->turnoRepository->findById($id);
     }
 
     public function create(array $data)
-{
-    // Verifica si ya hay un turno en esa fecha y hora para ese médico
-    $existe = $this->turnoRepo->existeTurno(
-        $data['medico_id'],
-        $data['fecha'],
-        $data['hora']
-    );
-
-    if ($existe) {
-        throw new \Exception('Este horario ya está ocupado.');
+    {
+        return $this->turnoRepository->create($data);
     }
-
-    // Todo ok, se puede crear el turno
-    return $this->turnoRepo->create($data);
-}
-
 
     public function update($id, array $data)
     {
-        return $this->turnoRepo->update($id, $data);
+        return $this->turnoRepository->update($id, $data);
     }
 
     public function delete($id)
     {
-        return $this->turnoRepo->delete($id);
-    }
-    
-
-    public function generarTurnosParaRango($medico_id, $fecha_inicio, $fecha_fin)
-{
-    $disponibilidad = $this->obtenerDisponibilidad($medico_id, $fecha_inicio, $fecha_fin);
-
-    foreach ($disponibilidad as $dia) {
-        $fecha = $dia['fecha'];
-        foreach ($dia['horas_disponibles'] as $hora) {
-            $this->turnoRepo->create([
-                'medico_id' => $medico_id,
-                'fecha' => $fecha,
-                'hora' => $hora,
-                'estado_turno_id' => 13, // o el ID de "disponible", ajusta según tu sistema
-            ]);
-        }
-    }
-}
-
-
-    public function obtenerDisponibilidad($medico_id, $fecha_inicio, $fecha_fin)
-{
-    $periodo = new \DatePeriod(
-        new \DateTime($fecha_inicio),
-        new \DateInterval('P1D'),
-        (new \DateTime($fecha_fin))->modify('+1 day') // para incluir el último día
-    );
-
-    $turnos = $this->turnoRepo->getTurnosPorMedicoYRangoFecha($medico_id, $fecha_inicio, $fecha_fin);
-
-    $disponibilidad = [];
-
-    foreach ($periodo as $fecha) {
-        $diaSemanaTexto = $this->convertirDiaSemana($fecha->format('N')); // 1=Lunes, 7=Domingo
-        $agenda = $this->agendaMedicaRepo->getAgendaPorMedicoYDia($medico_id, $diaSemanaTexto);
-
-        if (!$agenda) {
-            // No atiende ese día
-            continue;
-        }
-
-        $horaInicio = new \DateTime($agenda->hora_inicio);
-        $horaFin = new \DateTime($agenda->hora_fin);
-        $almuerzoInicio = new \DateTime($agenda->almuerzo_inicio);
-        $almuerzoFin = new \DateTime($agenda->almuerzo_fin);
-
-        // Extraemos turnos del día actual
-        $turnosDelDia = $turnos->filter(function($turno) use ($fecha) {
-            return $turno->fecha == $fecha->format('Y-m-d');
-        })->pluck('hora')->toArray();
-
-        $horaActual = clone $horaInicio;
-        $intervalo = new \DateInterval('PT30M'); // 30 minutos por turno, puedes ajustar
-
-        $horasDisponibles = [];
-
-        while ($horaActual < $horaFin) {
-            // No incluir horas de almuerzo
-            if ($horaActual >= $almuerzoInicio && $horaActual < $almuerzoFin) {
-                $horaActual->add($intervalo);
-                continue;
-            }
-
-            $horaFormateada = $horaActual->format('H:i:s');
-
-            // No incluir horas ya ocupadas
-            if (!in_array($horaFormateada, $turnosDelDia)) {
-                $horasDisponibles[] = $horaFormateada;
-            }
-
-            $horaActual->add($intervalo);
-        }
-
-        $disponibilidad[] = [
-            'fecha' => $fecha->format('Y-m-d'),
-            'horas_disponibles' => $horasDisponibles,
-        ];
+        return $this->turnoRepository->delete($id);
     }
 
-    return $disponibilidad;
-}
+    public function obtenerTurnosDisponibles($medico_id, $fecha_desde, $fecha_hasta)
+    {
+        // Suponemos que el turno "Disponible" tiene estado_turno_id = 13
+        $estadoDisponible = 13;
 
-// Función auxiliar para convertir número día a texto (en español)
-private function convertirDiaSemana($numero)
+        return $this->turnoRepository->obtenerTurnosPorEstadoYFecha(
+            $medico_id,
+            $estadoDisponible,
+            $fecha_desde,
+            $fecha_hasta
+        );
+    }
+
+    public function generarTurnosDisponibles($medico_id, $fecha_desde, $fecha_hasta)
 {
-    $dias = [
+    $agenda = $this->agendaMedicaRepository->obtenerPorMedico($medico_id);
+
+    if (!$agenda || $agenda->isEmpty()) {
+        return [];
+    }
+
+    $estadoDisponible = 13;
+    $turnosGenerados = [];
+
+    $diasSemanaMap = [
         1 => 'Lunes',
         2 => 'Martes',
         3 => 'Miercoles',
@@ -150,6 +77,91 @@ private function convertirDiaSemana($numero)
         7 => 'Domingo',
     ];
 
-    return $dias[$numero] ?? '';
+    $start = strtotime($fecha_desde);
+    $end = strtotime($fecha_hasta);
+
+    for ($fecha = $start; $fecha <= $end; $fecha += 86400) {
+        $nombreDia = $diasSemanaMap[date('N', $fecha)]; // 1 (Lunes) a 7 (Domingo)
+
+        // Filtrar horarios de agenda para ese día
+        $horariosDia = $agenda->filter(function ($a) use ($nombreDia) {
+            return $a->dia_semana === $nombreDia;
+        });
+
+        foreach ($horariosDia as $horario) {
+            $fechaTexto = date('Y-m-d', $fecha);
+
+            $inicio = strtotime($fechaTexto . ' ' . $horario->hora_inicio);
+            $fin = strtotime($fechaTexto . ' ' . $horario->hora_fin);
+
+            $almuerzoInicio = strtotime($fechaTexto . ' ' . $horario->almuerzo_inicio);
+            $almuerzoFin = strtotime($fechaTexto . ' ' . $horario->almuerzo_fin);
+
+            while ($inicio < $fin) {
+                // Saltar si estamos en horario de almuerzo
+                if ($inicio >= $almuerzoInicio && $inicio < $almuerzoFin) {
+                    $inicio = $almuerzoFin;
+                    continue;
+                }
+
+                $horaTexto = date('H:i:s', $inicio);
+
+                // Verificar si ya existe un turno en esa fecha y hora
+                $existe = $this->turnoRepository->existeTurno($medico_id, $fechaTexto, $horaTexto);
+
+                if (!$existe) {
+                    $turnoData = [
+                        'medico_id' => $medico_id,
+                        'paciente_id' => null,
+                        'fecha' => $fechaTexto,
+                        'hora' => $horaTexto,
+                        'estado_turno_id' => $estadoDisponible,
+                        'agenda_medica_id' => $horario->id,
+                        'motivo_consulta' => null,
+                    ];
+
+                    $turno = $this->turnoRepository->create($turnoData);
+                    $turnosGenerados[] = $turno;
+                }
+
+                $inicio += 30 * 60; // avanzar 30 minutos
+            }
+        }
+    }
+
+    return $turnosGenerados;
+}
+
+public function agendarTurno($id, $data)
+{
+    $turno = $this->turnoRepository->findById($id);
+
+    // Validar que el turno esté disponible (ejemplo estado 13)
+    if ($turno->estado_turno_id != 13) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'estado_turno_id' => ['El turno no está disponible para ser agendado.']
+        ]);
+    }
+
+    $turno->paciente_id = $data['paciente_id'];
+    $turno->motivo_consulta = $data['motivo_consulta'];
+    $turno->estado_turno_id = $data['estado_turno_id']; // Ej: el id de "reservado"
+
+    return $this->turnoRepository->save($turno);
+}
+public function getTurnosReservadosDesdeHoyPorMedico($medicoId)
+{
+    $today = date('Y-m-d');
+
+    return $this->turnoRepository->getTurnosReservadosDesdeFecha($medicoId, $today);
+}
+
+public function obtenerTurnosPorEstadoYFechas($estadoId, $fechaDesde, $fechaHasta)
+{
+    return Turno::with('medico.usuario.persona')
+        ->where('estado_turno_id', $estadoId)
+        ->whereBetween('fecha', [$fechaDesde, $fechaHasta])
+        ->get();
 }
 }
+

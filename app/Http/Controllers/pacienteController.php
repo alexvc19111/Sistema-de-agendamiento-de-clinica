@@ -10,14 +10,14 @@ class pacienteController extends Controller
     //
     public function index()
     {
-        return paciente::with('usuario')->get();
+        return paciente::with('persona')->get();
     }
 
     // Guardar nuevo paciente
     public function store(Request $request)
     {
         $request->validate([
-            'usuario_id' => 'required|exists:usuarios,id|unique:pacientes,usuario_id',
+            'persona_id' => 'required|exists:personas,id|unique:pacientes,persona_id',
         ]);
 
         return paciente::create($request->all());
@@ -26,7 +26,7 @@ class pacienteController extends Controller
     // Mostrar paciente específico
     public function show($id)
     {
-        return paciente::with('usuario')->findOrFail($id);
+        return paciente::with('persona')->findOrFail($id);
     }
 
     // Actualizar paciente
@@ -35,7 +35,8 @@ class pacienteController extends Controller
         $paciente = paciente::findOrFail($id);
 
         $request->validate([
-            'usuario_id' => 'sometimes|required|exists:usuarios,id',
+            'persona_id' => 'sometimes|required|exists:personas,id|unique:pacientes,persona_id,' . $paciente->id,
+
         ]);
 
         $paciente->update($request->all());
@@ -50,4 +51,20 @@ class pacienteController extends Controller
 
         return response()->json(['message' => 'Paciente eliminado correctamente']);
     }
+
+    public function buscar(Request $request)
+{
+    $termino = $request->input('q');
+
+    $pacientes = paciente::whereHas('persona', function ($query) use ($termino) {
+        $query->where('nombres', 'ILIKE', "%$termino%")
+              ->orWhere('apellidos', 'ILIKE', "%$termino%")
+              ->orWhere('dni', 'ILIKE', "%$termino%")
+              ->orWhere('fecha_nacimiento', 'ILIKE', "%$termino%")
+              ->orWhere('direccion', 'ILIKE', "%$termino%")
+              ->orWhere('telefono', 'ILIKE', "%$termino%");
+    })->with('persona')->get();
+
+    return response()->json($pacientes);
+}
 }

@@ -11,7 +11,7 @@ class medico extends Model
 
     protected $hidden = [
         'usuario_id',
-        'especialidad_id',
+        //'especialidad_id',
         'created_at',
         'updated_at'
     ];
